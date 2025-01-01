@@ -28,8 +28,8 @@ To get started with the Accident Detection Application, follow these steps:
 
 1. **Clone the repository**:
     ```sh
-    git clone https://github.com/yourusername/accident-detection-app.git
-    cd accident-detection-app
+    git clone https://github.com/ayusharma03/accident_eye.git
+    cd accident_eye
     ```
 
 2. **Install dependencies**:
@@ -79,11 +79,5 @@ We welcome contributions to the Accident Detection Application! If you have any 
     git push origin feature/your-feature-name
     ```
 5. **Open a pull request**.
-
-## License 📄
-
-This project is licensed under the MIT License. See the LICENSE file for more details.
-
----
 
 Thank you for using the Accident Detection Application! We hope it helps in making roads safer. 🚗💥
