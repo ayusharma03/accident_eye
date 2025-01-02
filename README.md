@@ -14,6 +14,7 @@ Welcome to the **Accident Detection Application**! This application uses YOLO (Y
 ## Introduction 📝
 
 The Accident Detection Application provides a graphical user interface (GUI) for detecting accidents using YOLO. It supports both image file detection and live camera feed detection, making it versatile and easy to use.
+![Mixed_Assets_elements7](https://github.com/user-attachments/assets/ee0daa8e-fb6b-4f88-a82b-361482d32a92)
 
 ## Features ✨
 
