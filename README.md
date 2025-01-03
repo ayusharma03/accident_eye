@@ -1,5 +1,7 @@
 # Accident Detection Application 🚗💥
 
+# camera live feed is working properly, if not check camera port number in the code and change that 
+
 Welcome to the **Accident Detection Application**! This application uses YOLO (You Only Look Once) for detecting accidents in images and live camera feeds. Below is a detailed overview of the application, its features, and how to use it.
 
 ## Table of Contents 📑
