@@ -16,6 +16,7 @@ Welcome to the **Accident Detection Application**! This application uses YOLO (Y
 ## Introduction 📝
 
 The Accident Detection Application provides a graphical user interface (GUI) for detecting accidents using YOLO. It supports both image file detection and live camera feed detection, making it versatile and easy to use.
+![Mixed_Assets_elements7](https://github.com/user-attachments/assets/ee0daa8e-fb6b-4f88-a82b-361482d32a92)
 
 ## Features ✨
 
@@ -30,8 +31,8 @@ To get started with the Accident Detection Application, follow these steps:
 
 1. **Clone the repository**:
     ```sh
-    git clone https://github.com/yourusername/accident-detection-app.git
-    cd accident-detection-app
+    git clone https://github.com/ayusharma03/accident_eye.git
+    cd accident_eye
     ```
 
 2. **Install dependencies**:
@@ -81,11 +82,5 @@ We welcome contributions to the Accident Detection Application! If you have any 
     git push origin feature/your-feature-name
     ```
 5. **Open a pull request**.
-
-## License 📄
-
-This project is licensed under the MIT License. See the LICENSE file for more details.
-
----
 
 Thank you for using the Accident Detection Application! We hope it helps in making roads safer. 🚗💥
