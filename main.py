@@ -78,7 +78,7 @@ class LiveDetectionThread(QThread):
             device = "cuda" if torch.cuda.is_available() else "cpu"
             model = YOLO(self.model_path)
 
-            cap = cv2.VideoCapture(0)  # Open the default camera
+            cap = cv2.VideoCapture(1)  # Open the default camera
             while not self.stop_flag:
                 ret, frame = cap.read()
                 if not ret:
