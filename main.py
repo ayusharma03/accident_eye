@@ -15,10 +15,11 @@ class DetectionThread(QThread):
     detection_complete = pyqtSignal(str)  # Signal to indicate detection is complete
     script_output = pyqtSignal(str)  # Signal to emit script output
 
-    def __init__(self, model_path, input_file):
+    def __init__(self, model_path, input_file, is_video=False):
         super().__init__()
         self.model_path = model_path
         self.input_file = input_file
+        self.is_video = is_video
         self.stop_flag = False  # Flag to safely stop the thread
 
     def stop(self):
@@ -41,22 +42,39 @@ class DetectionThread(QThread):
             else:
                 print("CUDA is not available. Using CPU.")
             model = YOLO(self.model_path)
-            results = model(self.input_file, device=device)
             
-            # Save the output
-            output_dir = os.path.join(os.path.dirname(self.input_file), "output")
-            os.makedirs(output_dir, exist_ok=True)
-            output_path = os.path.join(output_dir, "labeled_output.jpg")
-            results[0].save(output_path)  # Save the result
+            if self.is_video:
+                cap = cv2.VideoCapture(self.input_file)
+                output_dir = os.path.join(os.path.dirname(self.input_file), "output")
+                os.makedirs(output_dir, exist_ok=True)
+                output_path = os.path.join(output_dir, "labeled_output.mp4")
+                fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+                out = cv2.VideoWriter(output_path, fourcc, 20.0, (int(cap.get(3)), int(cap.get(4))))
+
+                while cap.isOpened() and not self.stop_flag:
+                    ret, frame = cap.read()
+                    if not ret:
+                        break
+                    results = model(frame, device=device)[0]
+                    for result in results:
+                        for box in result.boxes.xyxy:
+                            x1, y1, x2, y2 = map(int, box)
+                            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    out.write(frame)
+
+                cap.release()
+                out.release()
+            else:
+                results = model(self.input_file, device=device)
+                output_dir = os.path.join(os.path.dirname(self.input_file), "output")
+                os.makedirs(output_dir, exist_ok=True)
+                output_path = os.path.join(output_dir, "labeled_output.jpg")
+                results[0].save(output_path)  # Save the result
             
-            # Emit the path to the labeled image
+            # Emit the path to the labeled image or video
             self.detection_complete.emit(output_path)
         except Exception as e:
             self.detection_complete.emit(f"Error: {e}")
-
-    def stop(self):
-        """Set the stop flag to terminate detection."""
-        self.stop_flag = True
 
 
 class LiveDetectionThread(QThread):
@@ -165,6 +183,26 @@ class AccidentDetectionApp(QMainWindow):
         """)
         self.button_layout.addWidget(self.select_file_button)
 
+        self.select_video_button = QPushButton("Select Video")
+        self.select_video_button.clicked.connect(self.select_video)
+        self.select_video_button.setStyleSheet("""
+            QPushButton {
+                padding: 6px;
+                background-color: #17A2B8;
+                color: white;
+                border-radius: 5px;
+                font-weight: bold;
+                font-size: 12px;
+            }
+            QPushButton:hover {
+                background-color: #138496;
+            }
+            QPushButton:pressed {
+                background-color: #117a8b;
+            }
+        """)
+        self.button_layout.addWidget(self.select_video_button)
+
         self.start_button = QPushButton("Start Detection")
         self.start_button.clicked.connect(self.start_detection)
         self.start_button.setStyleSheet("""
@@ -252,8 +290,9 @@ class AccidentDetectionApp(QMainWindow):
         self.file_label.setAlignment(Qt.AlignCenter)
         self.layout.addWidget(self.file_label)
 
-        self.model_path = r"training_files/best.pt"
+        self.model_path = r"training_files/best11s_470imgs.pt"
         self.selected_file = None
+        self.is_video = False
         self.detection_thread = None
         self.live_detection_thread = None
 
@@ -263,18 +302,30 @@ class AccidentDetectionApp(QMainWindow):
         )
         if file_path:
             self.selected_file = file_path
+            self.is_video = False
             self.file_label.setText(f"Selected File: {file_path}")
             pixmap = QPixmap(file_path)
             self.image_label.setPixmap(pixmap.scaled(self.image_label.size(), Qt.KeepAspectRatio))
         else:
             self.file_label.setText("No file selected")
 
+    def select_video(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Select Video", "", "Video Files (*.mp4 *.avi *.mov)"
+        )
+        if file_path:
+            self.selected_file = file_path
+            self.is_video = True
+            self.file_label.setText(f"Selected Video: {file_path}")
+        else:
+            self.file_label.setText("No video selected")
+
     def start_detection(self):
         if not self.selected_file:
-            self.file_label.setText("Please select a file before starting detection.")
+            self.file_label.setText("Please select a file or video before starting detection.")
             return
         self.file_label.setText(f"Processing: {self.selected_file}")
-        self.detection_thread = DetectionThread(self.model_path, self.selected_file)
+        self.detection_thread = DetectionThread(self.model_path, self.selected_file, self.is_video)
         self.detection_thread.detection_complete.connect(self.on_detection_complete)
         self.detection_thread.start()
 
@@ -286,8 +337,11 @@ class AccidentDetectionApp(QMainWindow):
             self.show_output_image(result)
 
     def show_output_image(self, image_path):
-        pixmap = QPixmap(image_path)
-        self.image_label.setPixmap(pixmap.scaled(self.image_label.size(), Qt.KeepAspectRatio))
+        if self.is_video:
+            self.file_label.setText(f"Labeled video saved at: {image_path}")
+        else:
+            pixmap = QPixmap(image_path)
+            self.image_label.setPixmap(pixmap.scaled(self.image_label.size(), Qt.KeepAspectRatio))
 
     def stop_detection(self):
         if self.detection_thread and self.detection_thread.isRunning():

@@ -1,14 +1,7 @@
-# Ignore virtual environment directories
-venv/
+# Ignore the following folders from being uploaded to the repository
 env/
-.virtualenv/
-
-# Ignore Python bytecode files
-__pycache__/
-*.py[cod]
-
-# Ignore Jupyter Notebook checkpoints
-.ipynb_checkpoints/
-
-# Ignore environment configuration files
-.env
+test/
+output/
+training_files/
+yolo11_results/
+yolo11_custom/
