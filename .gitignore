@@ -2,6 +2,5 @@
 env/
 test/
 output/
-training_files/
-yolo11_results/
-yolo11_custom/
+pt_files/
+training_results/
