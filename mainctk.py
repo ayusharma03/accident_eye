@@ -89,7 +89,8 @@ class CameraApp(ctk.CTk):
                 messagebox.showerror("Error", "Please select a camera from the dropdown menu in Tab 1.")
                 return
             if not self.camera_running_tab1:
-                self.cap_tab1 = cv2.VideoCapture(self.selected_camera_index_tab1)  # Initialize the webcam with the selected index
+                # self.cap_tab1 = cv2.VideoCapture(self.selected_camera_index_tab1)  # Initialize the webcam with the selected index
+                self.cap_tab1 = cv2.VideoCapture(0)  
                 self.camera_running_tab1 = True
                 self.camera_thread_tab1 = threading.Thread(target=lambda: self.update_camera_feed(tab), daemon=True)
                 self.camera_thread_tab1.start()
