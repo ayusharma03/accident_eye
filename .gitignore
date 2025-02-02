@@ -4,3 +4,4 @@ test/
 output/
 pt_files/
 training_results/
+.venv/
