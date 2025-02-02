@@ -23,7 +23,7 @@ class CameraApp(ctk.CTk):
         self.camera_running_tab2 = False  # Track if camera is running in tab 2
 
         # Load Logo
-        self.logo_image = ctk.CTkImage(Image.open("assets/brand.png"), size=(100, 50))
+        self.logo_image = ctk.CTkImage(Image.open("assets/brand.png"), size=(200, 50))
 
         # Create tab view
         self.tab_view = ctk.CTkTabview(self)
@@ -213,7 +213,7 @@ class CameraApp(ctk.CTk):
         )  # Ensure it spans horizontally
 
         # Detect available cameras and populate the combo box with indexes
-        available_cameras = {"Camera 1": 1, "Camera 2": 2}
+        available_cameras = {"Camera 1":0, "Camera 2": 2, "Camera 3": 3}
 
         self.camera_list_tab1 = ctk.CTkOptionMenu(
             button_frame,

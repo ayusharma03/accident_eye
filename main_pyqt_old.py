@@ -123,7 +123,6 @@
 #         except Exception as e:
 #             print(f"Error: {e}")
 
-
 # class AccidentDetectionApp(QMainWindow):
 #     def __init__(self):
 #         super().__init__()
