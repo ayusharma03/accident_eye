@@ -1,0 +1,169 @@
+        # Logo on the left side of the top row
+        logo_frame = ctk.CTkFrame(top_row)
+        logo_frame.pack(
+            side="left", anchor="nw", padx=10, pady=10
+        )  # Align at top-left (logo) with padding
+        self.add_logo(logo_frame)  # Add the logo to this frame
+
+        button_frame = ctk.CTkFrame(top_row)
+        button_frame.pack(
+            side="left", padx=10, pady=10, fill="x"
+        )  # Ensure it spans horizontally
+
+        # Detect available cameras and populate the combo box with indexes
+        available_cameras = {"Camera 1": 1, "Camera 2": 2}
+
+        self.camera_list_tab2 = ctk.CTkOptionMenu(
+            button_frame,
+            values=list(available_cameras.keys()),
+            fg_color="white",
+            text_color="black",
+        )
+        self.camera_list_tab2.set("Select Camera")
+        self.camera_list_tab2.pack(fill="x", padx=5, pady=5)
+
+        def on_camera_select_tab2(choice):
+            if choice == "Select Camera":
+                print("Select a valid camera")
+            else:
+                self.selected_camera_index_tab2 = available_cameras[choice]
+            print(f"Selected Camera Index: {self.selected_camera_index_tab2}")
+
+        self.camera_list_tab2.configure(command=on_camera_select_tab2)
+
+        # Button container with left alignment but keeping buttons smaller
+        button_container = ctk.CTkFrame(button_frame)
+        button_container.pack(
+            fill="x", padx=5, pady=5
+        )  # Ensuring buttons stay within frame width
+
+        self.toggle_button_tab2 = ctk.CTkButton(
+            button_container,
+            text="On",
+            width=50,
+            command=lambda: (
+                self.toggle_button_tab2.configure(
+                    text="Off" if self.toggle_button_tab2.cget("text") == "On" else "On"
+                ),
+                (
+                    self.start_timer(2)
+                    if self.toggle_button_tab2.cget("text") == "Off"
+                    else self.stop_timer(2)
+                ),
+                (
+                    self.start_camera(2)
+                    if self.toggle_button_tab2.cget("text") == "Off"
+                    else self.stop_camera(2)
+                ),
+            ),
+        )
+        self.toggle_button_tab2.pack(
+            side="left", padx=5, pady=5
+        )  # Small width for text fitting
+
+        self.trigger_mode_tab2 = False  # Initialize trigger mode state
+        trigger_button_tab2 = ctk.CTkButton(
+            button_container,
+            text="Trigger Mode",
+            command=lambda: (
+                setattr(self, "trigger_mode_tab2", not self.trigger_mode_tab2),
+                trigger_button_tab2.configure(
+                    text="Continuous Mode" if self.trigger_mode_tab2 else "Trigger Mode"
+                ),
+            ),
+        )
+        trigger_button_tab2.pack(
+            side="left", padx=5, pady=5, expand=True, fill="x"
+        )  # Expand trigger button to take remaining space
+
+        # Timer on the right side
+        timer_frame_tab2 = ctk.CTkFrame(top_row)
+        timer_frame_tab2.pack(
+            side="right", padx=10, pady=10
+        )  # Align at top-right (timer)
+        self.camera_timer_tab2 = self.add_timer(timer_frame_tab2)
+
+        # Status indicator (Camera Live/Off)
+        status_indicator_frame_tab2 = ctk.CTkFrame(top_row)
+        status_indicator_frame_tab2.pack(side="right", padx=10, pady=10)
+
+        # Add the colored indicator (dot)
+        self.status_indicator_tab2 = ctk.CTkLabel(status_indicator_frame_tab2, text="●")
+        self.status_indicator_tab2.pack(side="left", padx=5, pady=2)
+        self.update_status_indicator("red", 2)  # Initial state is red (camera off)
+
+        # Add the "Live" label next to the indicator
+        self.live_label_tab2 = ctk.CTkLabel(status_indicator_frame_tab2, text="Live")
+        self.live_label_tab2.pack(side="left", padx=5, pady=2)
+
+        # Main container for the three sections
+        main_frame_tab2 = ctk.CTkFrame(self.camera_tab2)
+        main_frame_tab2.pack(fill="both", expand=True, padx=10, pady=2)
+
+        # Leftmost section (Camera Parameters)
+        param_frame_tab2 = ctk.CTkFrame(main_frame_tab2, width=300)
+        param_frame_tab2.pack(side="left", fill="y", padx=10)
+        param_label_tab2 = ctk.CTkLabel(param_frame_tab2, text="Camera Parameters")
+        param_label_tab2.pack(pady=10)
+
+        # Middle section (Live Camera Feed)
+        cam_frame_tab2 = ctk.CTkFrame(main_frame_tab2, width=500, height=400)
+        cam_frame_tab2.pack(side="left", expand=True, padx=10)
+
+        # Frame for the camera feed
+        self.cam_frame2 = ctk.CTkFrame(cam_frame_tab2, width=700, height=400)
+        self.cam_frame2.pack(pady=10)
+
+        # Label to display the camera feed
+        self.cam_label2 = ctk.CTkLabel(self.cam_frame2, text="")
+        self.cam_label2.pack(expand=True)
+
+        # Rightmost section (Detection Status, Last 10 Results, Last Not Good Product Image)
+        status_frame_tab2 = ctk.CTkFrame(main_frame_tab2, width=400)
+        status_frame_tab2.pack(side="right", fill="y", padx=10)
+
+        status_label_tab2 = ctk.CTkLabel(status_frame_tab2, text="Current Status")
+        status_label_tab2.pack(pady=5)
+        # Create a label to display pass/fail and total bolts processed
+        self.current_label_tab2 = ctk.CTkLabel(
+            status_frame_tab2, text="Pass/Fail", width=180
+        )
+        self.current_label_tab2.pack(pady=6)
+        self.current_label_tab2.configure(
+            text_color="#000000", fg_color="#f9f9f9", corner_radius=8
+        )
+
+        results_label_tab2 = ctk.CTkLabel(status_frame_tab2, text="Last 10 Results")
+        results_label_tab2.pack(pady=(20, 5))  # Add vertical distance above
+
+        # Frame to hold the last 10 results
+        results_frame_tab2 = ctk.CTkFrame(status_frame_tab2)
+        results_frame_tab2.pack(pady=5)
+
+        # Create 10 small circles to represent the last 10 results
+        self.result_circles_tab2 = []
+        for i in range(10):
+            circle = ctk.CTkLabel(
+                results_frame_tab2,
+                text="●",
+                text_color="red",
+                width=2,
+                height=2,
+                font=("Arial", 22),
+            )
+            circle.grid(row=i // 5, column=i % 5, padx=8, pady=2)
+            self.result_circles_tab2.append(circle)
+            last_image_label_tab2 = ctk.CTkLabel(
+                status_frame_tab2, text="Last Not Good Product Image"
+            )
+            last_image_label_tab2.pack(pady=(20, 5))  # Add vertical distance above
+
+            # Frame to hold the last not good product image
+            last_image_frame_tab2 = ctk.CTkFrame(
+                status_frame_tab2, width=200, height=200
+            )
+            last_image_frame_tab2.pack(pady=5)
+
+            # Label to display the last not good product image
+            self.last_image_display_tab2 = ctk.CTkLabel(last_image_frame_tab2, text="")
+            self.last_image_display_tab2.pack(expand=True)
