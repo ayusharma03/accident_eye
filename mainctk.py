@@ -276,7 +276,7 @@ class CameraApp(ctk.CTk):
 
         self.toggle_switch_tab1 = ctk.CTkSwitch(
             master=button_container,
-            text="Camera On/Off",
+            text="Camera",
             command=lambda: (
             self.start_timer(1) if self.toggle_switch_tab1.get() else self.stop_timer(1),
             self.start_camera(1) if self.toggle_switch_tab1.get() else self.stop_camera(1),
@@ -287,22 +287,6 @@ class CameraApp(ctk.CTk):
         self.toggle_switch_tab1.pack(
             side="left", padx=5, pady=5
         )  # Small width for text fitting
-
-        self.trigger_mode_tab1 = False  # Initialize trigger mode state
-        trigger_button_tab1 = ctk.CTkButton(
-            button_container,
-            text="Start Inferencing",
-            command=lambda: (
-                setattr(self, "trigger_mode_tab1", not self.trigger_mode_tab1),
-                trigger_button_tab1.configure(
-                    text="Stop Inferencing" if self.trigger_mode_tab1 else "Start Inferencing"
-                ),
-                self.start_inferencing(1) if self.trigger_mode_tab1 else self.stop_inferencing(1),
-            ),
-        )
-        trigger_button_tab1.pack(
-            side="left", padx=5, pady=5, expand=True, fill="x"
-        )  # Expand trigger button to take remaining space
 
         self.inferencing_tab1 = False  # Initialize inferencing state
         inferencing_button_tab1 = ctk.CTkButton(
