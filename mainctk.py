@@ -194,11 +194,13 @@ class CameraApp(ctk.CTk):
 
     def process_frame_with_yolo(self, frame):
         """Process the frame with YOLO model."""
-        results = self.accident_detector.detect_accident(frame)
+        results, class_names = self.accident_detector.detect_accident(frame)
         for result in results:
             for box in result.boxes:
                 x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
+                class_name = class_names.pop(0)
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                cv2.putText(frame, class_name, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
         return frame
 
     def update_result_circles(self, results):
@@ -392,7 +394,7 @@ class CameraApp(ctk.CTk):
         )
         redirect_label.pack(pady=5)
         redirect_label.bind(
-            "<Button-1>", lambda e: webbrowser.open("https://www.smartudyog.in/")
+            "<Button-1>", lambda e: webbrowser.open("https://www.pokemon.com/")
         )
 
         # Frame to display the last not good product image
