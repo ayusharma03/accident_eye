@@ -5,6 +5,7 @@ import cv2
 import threading
 import tkinter.messagebox as messagebox
 import webbrowser
+from modules.accident_detection import AccidentDetection
 
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("assets/theme_blue.json")
@@ -21,6 +22,7 @@ class CameraApp(ctk.CTk):
         self.running = False
         self.camera_running_tab1 = False  # Track if camera is running in tab 1
         self.camera_running_tab2 = False  # Track if camera is running in tab 2
+        self.accident_detector = AccidentDetection()
 
         # Load Logo
         self.logo_image = ctk.CTkImage(Image.open("assets/brand.png"), size=(200, 50))
@@ -138,6 +140,26 @@ class CameraApp(ctk.CTk):
                     self.cap_tab2.release()  # Release the webcam
                 self.cam_label2.configure(image=None)  # Clear the camera feed
 
+    def start_inferencing(self, tab):
+        """Start inferencing and update the camera feed with YOLO processed frames."""
+        if tab == 1:
+            if not self.camera_running_tab1:
+                messagebox.showerror("Error", "Camera is not running in Tab 1.")
+                return
+            self.inferencing_tab1 = True
+        else:
+            if not self.camera_running_tab2:
+                messagebox.showerror("Error", "Camera is not running in Tab 2.")
+                return
+            self.inferencing_tab2 = True
+
+    def stop_inferencing(self, tab):
+        """Stop inferencing."""
+        if tab == 1:
+            self.inferencing_tab1 = False
+        else:
+            self.inferencing_tab2 = False
+
     def update_camera_feed(self, tab):
         """Update the camera feed in the GUI."""
         while (tab == 1 and self.camera_running_tab1) or (
@@ -145,8 +167,12 @@ class CameraApp(ctk.CTk):
         ):
             if tab == 1:
                 ret, frame = self.cap_tab1.read()  # Read a frame from the webcam
+                if self.inferencing_tab1:
+                    frame = self.process_frame_with_yolo(frame)
             else:
                 ret, frame = self.cap_tab2.read()  # Read a frame from the webcam
+                if self.inferencing_tab2:
+                    frame = self.process_frame_with_yolo(frame)
             if ret:
                 # Convert the frame to a format suitable for CTkLabel
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -165,6 +191,15 @@ class CameraApp(ctk.CTk):
                         img_tk  # Keep a reference to avoid garbage collection
                     )
             time.sleep(0.03)  # Control the frame rate
+
+    def process_frame_with_yolo(self, frame):
+        """Process the frame with YOLO model."""
+        results = self.accident_detector.detect_accident(frame)
+        for result in results:
+            for box in result.boxes:
+                x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+        return frame
 
     def update_result_circles(self, results):
         """Update the color of the result circles based on the last 10 results."""
@@ -213,7 +248,7 @@ class CameraApp(ctk.CTk):
         )  # Ensure it spans horizontally
 
         # Detect available cameras and populate the combo box with indexes
-        available_cameras = {"Camera 1":0, "Camera 2": 2, "Camera 3": 3}
+        available_cameras = {"Camera 1": 1, "Camera 2": 2}
 
         self.camera_list_tab1 = ctk.CTkOptionMenu(
             button_frame,
@@ -239,44 +274,51 @@ class CameraApp(ctk.CTk):
             fill="x", padx=5, pady=5
         )  # Ensuring buttons stay within frame width
 
-        self.toggle_button_tab1 = ctk.CTkButton(
-            button_container,
-            text="On",
-            width=50,
+        self.toggle_switch_tab1 = ctk.CTkSwitch(
+            master=button_container,
+            text="Camera On/Off",
             command=lambda: (
-                self.toggle_button_tab1.configure(
-                    text="Off" if self.toggle_button_tab1.cget("text") == "On" else "On"
-                ),
-                (
-                    self.start_timer(1)
-                    if self.toggle_button_tab1.cget("text") == "Off"
-                    else self.stop_timer(1)
-                ),
-                (
-                    self.start_camera(1)
-                    if self.toggle_button_tab1.cget("text") == "Off"
-                    else self.stop_camera(1)
-                ),
+            self.start_timer(1) if self.toggle_switch_tab1.get() else self.stop_timer(1),
+            self.start_camera(1) if self.toggle_switch_tab1.get() else self.stop_camera(1),
             ),
         )
-        self.toggle_button_tab1.pack(
+        self.toggle_switch_tab1.pack(side="left", padx=5, pady=5)
+        
+        self.toggle_switch_tab1.pack(
             side="left", padx=5, pady=5
         )  # Small width for text fitting
 
         self.trigger_mode_tab1 = False  # Initialize trigger mode state
         trigger_button_tab1 = ctk.CTkButton(
             button_container,
-            text="Trigger Mode",
+            text="Start Inferencing",
             command=lambda: (
                 setattr(self, "trigger_mode_tab1", not self.trigger_mode_tab1),
                 trigger_button_tab1.configure(
-                    text="Continuous Mode" if self.trigger_mode_tab1 else "Trigger Mode"
+                    text="Stop Inferencing" if self.trigger_mode_tab1 else "Start Inferencing"
                 ),
+                self.start_inferencing(1) if self.trigger_mode_tab1 else self.stop_inferencing(1),
             ),
         )
         trigger_button_tab1.pack(
             side="left", padx=5, pady=5, expand=True, fill="x"
         )  # Expand trigger button to take remaining space
+
+        self.inferencing_tab1 = False  # Initialize inferencing state
+        inferencing_button_tab1 = ctk.CTkButton(
+            button_container,
+            text="Start Inferencing",
+            command=lambda: (
+                setattr(self, "inferencing_tab1", not self.inferencing_tab1),
+                inferencing_button_tab1.configure(
+                    text="Stop Inferencing" if self.inferencing_tab1 else "Start Inferencing"
+                ),
+                self.start_inferencing(1) if self.inferencing_tab1 else self.stop_inferencing(1),
+            ),
+        )
+        inferencing_button_tab1.pack(
+            side="left", padx=5, pady=5, expand=True, fill="x"
+        )  # Expand inferencing button to take remaining space
 
         # Timer on the right side
         timer_frame_tab1 = ctk.CTkFrame(top_row)

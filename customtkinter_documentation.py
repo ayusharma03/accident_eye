@@ -7,14 +7,14 @@ import webbrowser
 import logging
 
 customtkinter.set_appearance_mode("System")  # Modes: "System" (standard), "Dark", "Light"
-customtkinter.set_default_color_theme("green")  # Themes: "blue" (standard), "green", "dark-blue"
+customtkinter.set_default_color_theme("dark-blue")  # Themes: "blue" (standard), "green", "dark-blue"
 
 logging_level = logging.INFO
 logging.basicConfig(format='[%(asctime)s] [%(levelname)s] [%(threadName)s] %(message)s')
 log_msg = logging.getLogger()
 #    _log_msg.addHandler(logging.StreamHandler())
 log_msg.setLevel(logging_level)
-log_msg.info("Smart Udyog Vision application started")
+log_msg.info("CTK Doc")
 
 class App(customtkinter.CTk):
     def __init__(self):
@@ -23,8 +23,7 @@ class App(customtkinter.CTk):
         image_path = os.path.join('assets')
 
         # configure window
-        self.title("Smart Udyog Vision")
-        self.iconbitmap(os.path.join(image_path, "image.ico"))
+        self.title("TITLE GOES HERE")
         self.geometry(f"{1100}x{580}")
 
         # configure grid layout (4x4)
@@ -157,8 +156,8 @@ class App(customtkinter.CTk):
 
         #self.main_button_1 = customtkinter.CTkButton(master=self, fg_color="transparent", border_width=2, text_color=("gray10", "#DCE4EE"))
         #self.main_button_1.grid(row=3, column=3, padx=(20, 20), pady=(20, 20), sticky="nsew")
-        self.copyright = customtkinter.CTkLabel(self, text="Powered by www.smartudyog.in", anchor="w")
-        self.copyright.bind("<Button-1>", lambda e: self.callback("http://www.smartudyog.in"))
+        self.copyright = customtkinter.CTkLabel(self, text="link", anchor="w")
+        self.copyright.bind("<Button-1>", lambda e: self.callback("http://www.pokemon.com"))
         self.copyright.grid(row=3, column=3, padx=(20, 20), pady=(20, 20), sticky="nsew")
 
     def callback(self, url):
