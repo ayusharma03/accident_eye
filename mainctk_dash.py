@@ -7,6 +7,7 @@ import tkinter.messagebox as messagebox
 import webbrowser
 from modules.accident_detection import AccidentDetection
 from modules.accidents_tab import create_accidents_tab
+from modules.helmet_tab import create_helmet_tab  # Import the create_helmet_tab function
 
 ctk.set_appearance_mode("light")
 class AccidentEyeApp(ctk.CTk):
@@ -36,13 +37,14 @@ class AccidentEyeApp(ctk.CTk):
         self.tab3 = self.tabview.add("Helmet Detection")
         self.tab4 = self.tabview.add("Speed Detection")
         self.tab5 = self.tabview.add("Number Plate Detection")
-        self.cameras = [0, 1, 2, 3]  # Update with actual camera indexes
+        self.cameras = [1, 1, 2, 3]  # Update with actual camera indexes
         self.frames = [None] * 4
 
         # self.start_cameras()
         # Dashboard Tab Layout
         self.create_dashboard()
         create_accidents_tab(self)
+        create_helmet_tab(self)  # Add this line to create the Helmet Detection tab
         
     def create_dashboard(self):
         """ Creates the layout for the first dashboard tab """
