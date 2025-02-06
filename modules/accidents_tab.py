@@ -15,24 +15,26 @@ frames_buffer = []
 accidents = []
 accident_detector = AccidentDetection()
 
+
 def detect_accident_in_frame(frame):
     accident_results, accident_class_names = accident_detector.detect_accident(frame)
-    accident_detected = 'accident' in accident_class_names  # Adjust this condition based on your accident detection logic
+    accident_detected = (
+        "Accident" in accident_class_names
+    )  # Adjust this condition based on your accident detection logic
     return accident_detected, accident_class_names
+
 
 def save_frames(frames, timestamp, classes_present):
     folder_name = timestamp.strftime("%Y-%m-%d %H-%M-%S")
     folder_path = os.path.join("accidents", folder_name)
     os.makedirs(folder_path, exist_ok=True)
-    
+
     for i, (frame, frame_time, frame_classes) in enumerate(frames):
         frame_name = f"accident-{frame_time.strftime('%Y-%m-%d %H-%M-%S')}.png"
         cv2.imwrite(os.path.join(folder_path, frame_name), frame)
-    
-    accidents.append({
-        "timeline": folder_name,
-        "details": classes_present
-    })
+
+    accidents.append({"timeline": folder_name, "details": classes_present})
+
 
 def create_accidents_tab(app):
     top_row = ctk.CTkFrame(app.tab2)  # Set a specific height for the top row
@@ -64,12 +66,11 @@ def create_accidents_tab(app):
         master=button_container,
         text="Camera",
         command=lambda: (
-        start_timer(app) if app.toggle_switch_tab1.get() else stop_timer(app),
-        start_camera(app) if app.toggle_switch_tab1.get() else stop_camera(app),
+            start_timer(app) if app.toggle_switch_tab1.get() else stop_timer(app),
+            start_camera(app) if app.toggle_switch_tab1.get() else stop_camera(app),
         ),
     )
     app.toggle_switch_tab1.pack(side="left", padx=8, fill="y")
-    
 
     app.inferencing_tab1 = False  # Initialize inferencing state
     inferencing_button_tab1 = ctk.CTkButton(
@@ -80,7 +81,11 @@ def create_accidents_tab(app):
             inferencing_button_tab1.configure(
                 text="Stop Inferencing" if app.inferencing_tab1 else "Start Inferencing"
             ),
-            start_inferencing(app, 1) if app.inferencing_tab1 else stop_inferencing(app, 1),
+            (
+                start_inferencing(app, 1)
+                if app.inferencing_tab1
+                else stop_inferencing(app, 1)
+            ),
         ),
     )
     inferencing_button_tab1.pack(
@@ -89,9 +94,7 @@ def create_accidents_tab(app):
 
     # Timer on the right side
     timer_frame_tab1 = ctk.CTkFrame(top_row)
-    timer_frame_tab1.pack(
-        side="right", padx=10, pady=10
-    )  # Align at top-right (timer)
+    timer_frame_tab1.pack(side="right", padx=10, pady=10)  # Align at top-right (timer)
     app.camera_timer_tab1 = add_timer(app, timer_frame_tab1)
 
     # Status indicator (Camera Live/Off)
@@ -99,7 +102,9 @@ def create_accidents_tab(app):
     status_indicator_frame_tab1.pack(side="right", padx=10, pady=10)
 
     # Add the colored indicator (dot)
-    app.status_indicator_tab1 = ctk.CTkLabel(status_indicator_frame_tab1, text="● Live", height=50, width=80)
+    app.status_indicator_tab1 = ctk.CTkLabel(
+        status_indicator_frame_tab1, text="● Live", height=50, width=80
+    )
     app.status_indicator_tab1.pack(side="left", padx=5, pady=2)
     update_status_indicator(app, "red")  # Initial state is red (camera off)
 
@@ -108,16 +113,24 @@ def create_accidents_tab(app):
     main_frame_tab1.pack(fill="both", expand=True, padx=5)
 
     # Middle section (Live Camera Feed) =======
-    cam_frame_tab1 = ctk.CTkFrame(main_frame_tab1, width=700, height=400)  # Adjusted width and height
+    cam_frame_tab1 = ctk.CTkFrame(
+        main_frame_tab1, width=700, height=400
+    )  # Adjusted width and height
     cam_frame_tab1.pack(side="left", expand=True)  # Added pady for vertical padding
     # Camera title frame and label
     app.camera_title_tab1 = ctk.CTkLabel(cam_frame_tab1, text="Accident Camera Feed")
     app.camera_title_tab1.pack(pady=2)
-    app.camera_title_tab1.configure(font=("Arial",18,"bold"))  # Set text color to black
+    app.camera_title_tab1.configure(
+        font=("Arial", 18, "bold")
+    )  # Set text color to black
     # Label to display the camera feed
-    app.cam_label1 = ctk.CTkLabel(cam_frame_tab1, text=" ", fg_color="gray", height=400, width=700)  # Gray background color
-    app.cam_label1.pack(expand=True, fill="both", padx=10,pady=8)  # Use fill="both" to ensure it takes up the full space
-    app.cam_label1.configure( # Set corner radius for a rounded appearance
+    app.cam_label1 = ctk.CTkLabel(
+        cam_frame_tab1, text=" ", fg_color="gray", height=400, width=700
+    )  # Gray background color
+    app.cam_label1.pack(
+        expand=True, fill="both", padx=10, pady=8
+    )  # Use fill="both" to ensure it takes up the full space
+    app.cam_label1.configure(  # Set corner radius for a rounded appearance
         corner_radius=8
     )
 
@@ -125,7 +138,13 @@ def create_accidents_tab(app):
     statistics_frame_tab1 = ctk.CTkFrame(cam_frame_tab1, width=700, height=100)
     statistics_frame_tab1.pack(side="left", padx=10, pady=10)
     # fill the frame with accident statistics of the day
-    app.accident_statistics_tab1 = ctk.CTkLabel(statistics_frame_tab1, text="Accidents Today: 0\nLast Accident: -", height=80, width=700,anchor="center")
+    app.accident_statistics_tab1 = ctk.CTkLabel(
+        statistics_frame_tab1,
+        text="Accidents Today: 0\nLast Accident: -",
+        height=80,
+        width=700,
+        anchor="center",
+    )
     app.accident_statistics_tab1.pack(pady=5, padx=10, fill="both", side="left")
 
     # Rightmost section (Detection Status, Last 10 Results, Last Not Good Product Image)
@@ -134,14 +153,17 @@ def create_accidents_tab(app):
 
     status_label_tab1 = ctk.CTkLabel(status_frame_tab1, text="Last Accident Detection")
     status_label_tab1.pack(pady=5)
-    
+
     # list of last 10 accidents
-    app.last_accidents_tab1 = ctk.CTkScrollableFrame(status_frame_tab1, width=600, height=700, fg_color="transparent")
+    app.last_accidents_tab1 = ctk.CTkScrollableFrame(
+        status_frame_tab1, width=600, height=700, fg_color="transparent"
+    )
     app.last_accidents_tab1.pack(pady=5)
     app.accident_button = ctk.CTkButton(status_frame_tab1, text="View All Accidents")
     app.accident_button.pack(pady=5)
 
     update_accident_list(app)
+
 
 def update_accident_list(app):
     """Update the list of accidents in the sidebar."""
@@ -162,10 +184,14 @@ def update_accident_list(app):
 
         try:
             accident_image = ctk.CTkImage(Image.open(image_path), size=(50, 50))
-            accident_image_label = ctk.CTkLabel(frame, image=accident_image, text="", width=50, height=50)
+            accident_image_label = ctk.CTkLabel(
+                frame, image=accident_image, text="", width=50, height=50
+            )
             accident_image_label.pack(side="left", padx=8, pady=5)
         except FileNotFoundError:
-            accident_image_label = ctk.CTkLabel(frame, text="No Image", width=50, height=50)
+            accident_image_label = ctk.CTkLabel(
+                frame, text="No Image", width=50, height=50
+            )
             accident_image_label.pack(side="left", padx=8, pady=5)
 
         try:
@@ -183,7 +209,7 @@ def update_accident_list(app):
             command=lambda acc=folder: show_accident_details(accident=acc),
             anchor="center",
             height=50,
-            fg_color=button_color
+            fg_color=button_color,
         )
         button.pack(side="left", padx=5, pady=5, fill="x", expand=True)
 
@@ -191,10 +217,13 @@ def update_accident_list(app):
             with open(classes_path, "r") as f:
                 classes = f.readlines()
             for cls in classes:
-                cls_button = ctk.CTkButton(frame, text=f"Collision of: {cls.strip()}", height=30)
+                cls_button = ctk.CTkButton(
+                    frame, text=f"Collision of: {cls.strip()}", height=30
+                )
                 cls_button.pack(side="left", padx=5, pady=5)
         except FileNotFoundError:
             pass
+
 
 def show_accident_details(accident):
     """Show a pop-up with accident details."""
@@ -204,12 +233,17 @@ def show_accident_details(accident):
             details = f.read().strip()
     except FileNotFoundError:
         details = "No details available"
-    messagebox.showinfo("Accident Details", f"Timestamp: {accident.replace('accident-', '')}\nDetails: {details}")
+    messagebox.showinfo(
+        "Accident Details",
+        f"Timestamp: {accident.replace('accident-', '')}\nDetails: {details}",
+    )
+
 
 def add_logo(app, parent):
     """Adds a logo to the top left corner of a tab."""
     logo_label = ctk.CTkLabel(parent, image=app.logo_image, text="")
     logo_label.pack(anchor="nw", padx=10, pady=10)
+
 
 def add_timer(app, parent):
     """Adds a timer to the top right corner of a tab."""
@@ -217,9 +251,11 @@ def add_timer(app, parent):
     timer_label.pack(anchor="ne", padx=10, pady=2)
     return timer_label
 
+
 def update_status_indicator(app, color):
     """Update the status indicator color."""
     app.status_indicator_tab1.configure(text_color=color)
+
 
 def start_camera(app):
     """Start the webcam feed."""
@@ -238,6 +274,7 @@ def start_camera(app):
     else:
         messagebox.showerror("Error", "Camera is already running in Tab 1.")
 
+
 def stop_camera(app):
     """Stop the webcam feed."""
     print("camera stoppingg")
@@ -246,6 +283,7 @@ def stop_camera(app):
         if app.cap_tab1:
             app.cap_tab1.release()  # Release the webcam
         app.cam_label1.configure(image=None)  # Clear the camera feed
+
 
 def start_inferencing(app, tab):
     """Start inferencing and update the camera feed with YOLO processed frames."""
@@ -260,12 +298,14 @@ def start_inferencing(app, tab):
             return
         app.inferencing_tab2 = True
 
+
 def stop_inferencing(app, tab):
     """Stop inferencing."""
     if tab == 1:
         app.inferencing_tab1 = False
     else:
         app.inferencing_tab2 = False
+
 
 def update_camera_feed(app):
     """Update the camera feed in the GUI."""
@@ -279,7 +319,9 @@ def update_camera_feed(app):
         if accident_detected:
             app.consecutive_frames_with_accident += 1
             app.consecutive_frames_without_accident = 0
-            accident_results, accident_classes = app.accident_detector.detect_accident(frame)
+            accident_results, accident_classes = app.accident_detector.detect_accident(
+                frame
+            )
             app.frames_buffer.append((frame, datetime.now(), accident_classes))
 
             if app.consecutive_frames_with_accident >= 80:
@@ -312,6 +354,7 @@ def update_camera_feed(app):
 
         time.sleep(0.03)  # Control the frame rate
 
+
 def process_frame_with_yolo(app, frame):
     """Process the frame with YOLO model."""
     results, class_names = app.accident_detector.detect_accident(frame)
@@ -321,8 +364,17 @@ def process_frame_with_yolo(app, frame):
             x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
             class_name = class_names.pop(0)
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            cv2.putText(frame, class_name, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+            cv2.putText(
+                frame,
+                class_name,
+                (x1, y1 - 10),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.9,
+                (0, 255, 0),
+                2,
+            )
     return frame, classes
+
 
 def start_timer(app):
     """Start the camera and update the status indicator."""
@@ -336,12 +388,14 @@ def start_timer(app):
         update_timer(app)
         update_status_indicator(app, "green")  # Change to green when camera is live
 
+
 def stop_timer(app):
     """Stop the camera and update the status indicator."""
     if app.running:
         app.elapsed_time = time.time() - app.start_time
         app.running = False
         update_status_indicator(app, "red")  # Change to red when camera is stopped
+
 
 def update_timer(app):
     """Update the timer label every second while it's running."""
