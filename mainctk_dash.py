@@ -37,7 +37,7 @@ class AccidentEyeApp(ctk.CTk):
         self.tab3 = self.tabview.add("Helmet Detection")
         self.tab4 = self.tabview.add("Speed Detection")
         self.tab5 = self.tabview.add("Number Plate Detection")
-        self.cameras = [1, 1, 2, 3]  # Update with actual camera indexes
+        self.cameras = [0, 1, 2, 3]  # Update with actual camera indexes
         self.frames = [None] * 4
 
         # self.start_cameras()
