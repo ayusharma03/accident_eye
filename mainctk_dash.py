@@ -13,7 +13,7 @@ class AccidentEyeApp(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("Accident Eye")
-        self.geometry("1920x1080")
+        self.geometry("1920x1080")  # Open the app in full-screen mode
         
         # Load Logo
         self.logo_image = ctk.CTkImage(Image.open("assets/brand.png"), size=(200, 50))

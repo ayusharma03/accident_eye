@@ -17,12 +17,14 @@ accident_detector = AccidentDetection()
 
 def detect_accident_in_frame(frame):
     accident_results, accident_class_names = accident_detector.detect_accident(frame)
-    accident_detected = 'accident' in accident_class_names  # Adjust this condition based on your accident detection logic
+    accident_detected = 'Accident' in accident_class_names  # Adjust this condition based on your accident detection logic
     return accident_detected, accident_class_names
 
-def save_frames(frames, timestamp, classes_present):
+def save_frames(frames, timestamp, classes_present, confirmed=True):
     folder_name = timestamp.strftime("%Y-%m-%d %H-%M-%S")
     folder_path = os.path.join("accidents", folder_name)
+    if not confirmed:
+        folder_path = os.path.join("accidents/reject_accidents", folder_name)
     os.makedirs(folder_path, exist_ok=True)
     
     for i, (frame, frame_time, frame_classes) in enumerate(frames):
@@ -33,6 +35,28 @@ def save_frames(frames, timestamp, classes_present):
         "timeline": folder_name,
         "details": classes_present
     })
+
+def confirm_accident(app, frames_buffer, timestamp, accident_classes):
+    def on_confirm():
+        save_frames(frames_buffer, timestamp, accident_classes, confirmed=True)
+        popup.destroy()
+
+    def on_reject():
+        save_frames(frames_buffer, timestamp, accident_classes, confirmed=False)
+        popup.destroy()
+
+    popup = ctk.CTkToplevel(app)
+    popup.title("Confirm Accident")
+    popup.geometry("300x150")
+    popup.attributes("-topmost", True)  # Keep the pop-up on top
+    label = ctk.CTkLabel(popup, text="Is this an accident?")
+    label.pack(pady=10)
+    confirm_button = ctk.CTkButton(popup, text="Yes", command=on_confirm)
+    confirm_button.pack(side="left", padx=20, pady=20)
+    reject_button = ctk.CTkButton(popup, text="No", command=on_reject)
+    reject_button.pack(side="right", padx=20, pady=20)
+    
+    popup.after(20000, on_confirm)  # Automatically confirm after 20 seconds
 
 def create_accidents_tab(app):
     top_row = ctk.CTkFrame(app.tab2)  # Set a specific height for the top row
@@ -148,8 +172,7 @@ def update_accident_list(app):
     for widget in app.last_accidents_tab1.winfo_children():
         widget.destroy()
 
-    today = time.strftime("%Y-%m-%d")
-    accident_folders = [f for f in os.listdir("accidents") if today in f]
+    accident_folders = [f for f in os.listdir("accidents") if os.path.isdir(os.path.join("accidents", f))]
 
     for folder in accident_folders:
         frame = ctk.CTkFrame(app.last_accidents_tab1)
@@ -180,7 +203,7 @@ def update_accident_list(app):
             frame,
             text=timestamp,
             compound="left",
-            command=lambda acc=folder: show_accident_details(accident=acc),
+            command=lambda acc=folder: show_accident_details(accident=acc, editable=(button_color == "red")),
             anchor="center",
             height=50,
             fg_color=button_color
@@ -196,7 +219,7 @@ def update_accident_list(app):
         except FileNotFoundError:
             pass
 
-def show_accident_details(accident):
+def show_accident_details(accident, editable=False):
     """Show a pop-up with accident details."""
     details_path = f"accidents/{accident}/details.txt"
     try:
@@ -204,7 +227,57 @@ def show_accident_details(accident):
             details = f.read().strip()
     except FileNotFoundError:
         details = "No details available"
-    messagebox.showinfo("Accident Details", f"Timestamp: {accident.replace('accident-', '')}\nDetails: {details}")
+
+    popup = ctk.CTkToplevel()
+    popup.title("Accident Details")
+    popup.geometry("400x300")
+    popup.attributes("-topmost", True)  # Keep the pop-up on top
+
+    details_label = ctk.CTkLabel(popup, text=f"Timestamp: {accident.replace('accident-', '')}\nDetails: {details}")
+    details_label.pack(pady=10)
+
+    if editable:
+        vehicle_classes_label = ctk.CTkLabel(popup, text="Vehicle Classes Involved:")
+        vehicle_classes_label.pack(pady=5)
+        vehicle_classes_entry = ctk.CTkEntry(popup)
+        vehicle_classes_entry.pack(pady=5)
+
+        reason_label = ctk.CTkLabel(popup, text="Reason of Accident:")
+        reason_label.pack(pady=5)
+        reason_entry = ctk.CTkEntry(popup)
+        reason_entry.pack(pady=5)
+
+        casualties_label = ctk.CTkLabel(popup, text="Casualties:")
+        casualties_label.pack(pady=5)
+        casualties_entry = ctk.CTkEntry(popup)
+        casualties_entry.pack(pady=5)
+
+        injured_label = ctk.CTkLabel(popup, text="Injured People:")
+        injured_label.pack(pady=5)
+        injured_entry = ctk.CTkEntry(popup)
+        injured_entry.pack(pady=5)
+
+        accident_type_label = ctk.CTkLabel(popup, text="Type of Accident (Minor/Major):")
+        accident_type_label.pack(pady=5)
+        accident_type_entry = ctk.CTkEntry(popup)
+        accident_type_entry.pack(pady=5)
+
+        def save_details():
+            with open(details_path, "w") as f:
+                f.write(f"Vehicle Classes: {vehicle_classes_entry.get()}\n")
+                f.write(f"Reason: {reason_entry.get()}\n")
+                f.write(f"Casualties: {casualties_entry.get()}\n")
+                f.write(f"Injured: {injured_entry.get()}\n")
+                f.write(f"Type: {accident_type_entry.get()}\n")
+            popup.destroy()
+            update_accident_list(app)
+
+        save_button = ctk.CTkButton(popup, text="Save", command=save_details)
+        save_button.pack(pady=10)
+
+    else:
+        edit_button = ctk.CTkButton(popup, text="Edit", command=lambda: show_accident_details(accident, editable=True))
+        edit_button.pack(pady=10)
 
 def add_logo(app, parent):
     """Adds a logo to the top left corner of a tab."""
@@ -284,7 +357,7 @@ def update_camera_feed(app):
 
             if app.consecutive_frames_with_accident >= 80:
                 # Store frames if accident detected for 80 out of 100 frames
-                save_frames(app.frames_buffer, datetime.now(), accident_classes)
+                confirm_accident(app, app.frames_buffer, datetime.now(), accident_classes)
                 app.frames_buffer = []
                 app.consecutive_frames_with_accident = 0
         else:
