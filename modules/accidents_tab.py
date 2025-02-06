@@ -35,6 +35,7 @@ def save_frames(frames, timestamp, classes_present, confirmed=True):
         "timeline": folder_name,
         "details": classes_present
     })
+    update_accident_list(app)  # Update the accident list in real-time
 
 def confirm_accident(app, frames_buffer, timestamp, accident_classes):
     def on_confirm():
@@ -230,53 +231,104 @@ def show_accident_details(accident, editable=False):
 
     popup = ctk.CTkToplevel()
     popup.title("Accident Details")
-    popup.geometry("400x300")
+    popup.geometry("600x600")
     popup.attributes("-topmost", True)  # Keep the pop-up on top
 
-    details_label = ctk.CTkLabel(popup, text=f"Timestamp: {accident.replace('accident-', '')}\nDetails: {details}")
+    scrollable_frame = ctk.CTkScrollableFrame(popup)
+    scrollable_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+    details_label = ctk.CTkLabel(scrollable_frame, text=f"TIMESTAMP: {accident.replace('accident-', '')}", font=("Arial", 16, "bold"))
     details_label.pack(pady=10)
 
     if editable:
-        vehicle_classes_label = ctk.CTkLabel(popup, text="Vehicle Classes Involved:")
+        vehicle_classes_label = ctk.CTkLabel(scrollable_frame, text="VEHICLE CLASSES INVOLVED:", font=("Arial", 14, "bold"))
         vehicle_classes_label.pack(pady=5)
-        vehicle_classes_entry = ctk.CTkEntry(popup)
-        vehicle_classes_entry.pack(pady=5)
+        
+        vehicle_classes = ["Car", "Truck", "Bike", "Bus", "Van"]
+        vehicle_class_buttons = []
+        vehicle_class_frame = ctk.CTkFrame(scrollable_frame)
+        vehicle_class_frame.pack(pady=5)
+        for i, vehicle_class in enumerate(vehicle_classes):
+            var = ctk.BooleanVar()
+            button = ctk.CTkCheckBox(vehicle_class_frame, text=vehicle_class, variable=var)
+            button.grid(row=i//2, column=i%2, padx=5, pady=5)
+            vehicle_class_buttons.append((vehicle_class, var))
 
-        reason_label = ctk.CTkLabel(popup, text="Reason of Accident:")
+        reason_frame = ctk.CTkFrame(scrollable_frame)
+        reason_frame.pack(pady=5, fill="x")
+        reason_label = ctk.CTkLabel(reason_frame, text="REASON OF ACCIDENT:", font=("Arial", 14, "bold"))
         reason_label.pack(pady=5)
-        reason_entry = ctk.CTkEntry(popup)
+        reason_entry = ctk.CTkEntry(reason_frame, placeholder_text="Enter reason of accident")
         reason_entry.pack(pady=5)
 
-        casualties_label = ctk.CTkLabel(popup, text="Casualties:")
+        casualties_frame = ctk.CTkFrame(scrollable_frame)
+        casualties_frame.pack(pady=5, fill="x")
+        casualties_label = ctk.CTkLabel(casualties_frame, text="CASUALTIES:", font=("Arial", 14, "bold"))
         casualties_label.pack(pady=5)
-        casualties_entry = ctk.CTkEntry(popup)
+        casualties_entry = ctk.CTkEntry(casualties_frame, placeholder_text="Enter number of casualties")
         casualties_entry.pack(pady=5)
 
-        injured_label = ctk.CTkLabel(popup, text="Injured People:")
+        injured_frame = ctk.CTkFrame(scrollable_frame)
+        injured_frame.pack(pady=5, fill="x")
+        injured_label = ctk.CTkLabel(injured_frame, text="INJURED PEOPLE:", font=("Arial", 14, "bold"))
         injured_label.pack(pady=5)
-        injured_entry = ctk.CTkEntry(popup)
+        injured_entry = ctk.CTkEntry(injured_frame, placeholder_text="Enter number of injured people")
         injured_entry.pack(pady=5)
 
-        accident_type_label = ctk.CTkLabel(popup, text="Type of Accident (Minor/Major):")
+        accident_type_frame = ctk.CTkFrame(scrollable_frame)
+        accident_type_frame.pack(pady=5, fill="x")
+        accident_type_label = ctk.CTkLabel(accident_type_frame, text="TYPE OF ACCIDENT:", font=("Arial", 14, "bold"))
         accident_type_label.pack(pady=5)
-        accident_type_entry = ctk.CTkEntry(popup)
-        accident_type_entry.pack(pady=5)
+        accident_type_var = ctk.StringVar()
+        minor_radio = ctk.CTkRadioButton(accident_type_frame, text="Minor", variable=accident_type_var, value="Minor")
+        minor_radio.pack(pady=5)
+        major_radio = ctk.CTkRadioButton(accident_type_frame, text="Major", variable=accident_type_var, value="Major")
+        major_radio.pack(pady=5)
 
         def save_details():
+            selected_classes = [vc for vc, var in vehicle_class_buttons if var.get()]
             with open(details_path, "w") as f:
-                f.write(f"Vehicle Classes: {vehicle_classes_entry.get()}\n")
+                f.write(f"Vehicle Classes: {', '.join(selected_classes)}\n")
                 f.write(f"Reason: {reason_entry.get()}\n")
                 f.write(f"Casualties: {casualties_entry.get()}\n")
                 f.write(f"Injured: {injured_entry.get()}\n")
-                f.write(f"Type: {accident_type_entry.get()}\n")
+                f.write(f"Type: {accident_type_var.get()}\n")
             popup.destroy()
             update_accident_list(app)
 
-        save_button = ctk.CTkButton(popup, text="Save", command=save_details)
+        save_button = ctk.CTkButton(scrollable_frame, text="Save", command=save_details)
         save_button.pack(pady=10)
 
     else:
-        edit_button = ctk.CTkButton(popup, text="Edit", command=lambda: show_accident_details(accident, editable=True))
+        details_lines = details.split('\n')
+        for line in details_lines:
+            if line.startswith("Vehicle Classes:"):
+                vehicle_classes_frame = ctk.CTkFrame(scrollable_frame)
+                vehicle_classes_frame.pack(pady=5, fill="x")
+                vehicle_classes_label = ctk.CTkLabel(vehicle_classes_frame, text=line, font=("Arial", 14))
+                vehicle_classes_label.pack(pady=5)
+            elif line.startswith("Reason:"):
+                reason_frame = ctk.CTkFrame(scrollable_frame)
+                reason_frame.pack(pady=5, fill="x")
+                reason_label = ctk.CTkLabel(reason_frame, text=line, font=("Arial", 14))
+                reason_label.pack(pady=5)
+            elif line.startswith("Casualties:"):
+                casualties_frame = ctk.CTkFrame(scrollable_frame)
+                casualties_frame.pack(pady=5, fill="x")
+                casualties_label = ctk.CTkLabel(casualties_frame, text=line, font=("Arial", 14))
+                casualties_label.pack(pady=5)
+            elif line.startswith("Injured:"):
+                injured_frame = ctk.CTkFrame(scrollable_frame)
+                injured_frame.pack(pady=5, fill="x")
+                injured_label = ctk.CTkLabel(injured_frame, text=line, font=("Arial", 14))
+                injured_label.pack(pady=5)
+            elif line.startswith("Type:"):
+                accident_type_frame = ctk.CTkFrame(scrollable_frame)
+                accident_type_frame.pack(pady=5, fill="x")
+                accident_type_label = ctk.CTkLabel(accident_type_frame, text=line, font=("Arial", 14))
+                accident_type_label.pack(pady=5)
+
+        edit_button = ctk.CTkButton(scrollable_frame, text="Edit", command=lambda: show_accident_details(accident, editable=True))
         edit_button.pack(pady=10)
 
 def add_logo(app, parent):
