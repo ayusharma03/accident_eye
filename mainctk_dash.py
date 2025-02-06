@@ -6,8 +6,6 @@ import time
 import tkinter.messagebox as messagebox
 import webbrowser
 from modules.accident_detection import AccidentDetection
-from detect_person import detect_accident_in_frame, save_frames, accidents, accident_detector
-from datetime import datetime
 from modules.accidents_tab import create_accidents_tab
 
 ctk.set_appearance_mode("light")
@@ -27,7 +25,7 @@ class AccidentEyeApp(ctk.CTk):
         self.consecutive_frames_with_accident = 0
         self.consecutive_frames_without_accident = 0
         self.frames_buffer = []
-
+        self.accidents = []  # Initialize the accidents attribute
         
         # Tab View
         self.tabview = ctk.CTkTabview(self)
@@ -40,13 +38,7 @@ class AccidentEyeApp(ctk.CTk):
         self.tab5 = self.tabview.add("Number Plate Detection")
         self.cameras = [0, 1, 2, 3]  # Update with actual camera indexes
         self.frames = [None] * 4
-        # Example list of accidents with timestamps
-        self.accidents = [
-            {"timestamp": "2023-10-01 12:00:00", "details": "Accident 1 details"},
-            {"timestamp": "2023-10-02 14:30:00", "details": "Accident 2 details"},
-            {"timestamp": "2023-10-03 09:15:00", "details": "Accident 3 details"},
-            # Add more accidents as needed
-        ]
+
         # self.start_cameras()
         # Dashboard Tab Layout
         self.create_dashboard()
@@ -58,6 +50,10 @@ class AccidentEyeApp(ctk.CTk):
         self.analytics_frame = ctk.CTkFrame(self.tab1)
         self.analytics_frame.pack(expand=True ,padx=10, pady=5, side='top', anchor='n')
         
+        # Add logo to the dashboard
+        self.logo_label = ctk.CTkLabel(self.analytics_frame, image=self.logo_image, text="")
+        self.logo_label.pack(side='left', padx=10, pady=10)
+
         # Site Selection
         self.site_frame = ctk.CTkFrame(self.analytics_frame)
         self.site_frame.pack(side='left', padx=5)

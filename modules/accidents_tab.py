@@ -3,8 +3,36 @@ from PIL import Image
 import tkinter.messagebox as messagebox
 import cv2
 import threading
+import os
 import time
-from detect_person import detect_accident_in_frame, save_frames, accidents, accident_detector
+from datetime import datetime
+from modules.accident_detection import AccidentDetection
+
+# Initialize accident detection variables
+consecutive_frames_with_accident = 0
+consecutive_frames_without_accident = 0
+frames_buffer = []
+accidents = []
+accident_detector = AccidentDetection()
+
+def detect_accident_in_frame(frame):
+    accident_results, accident_class_names = accident_detector.detect_accident(frame)
+    accident_detected = 'accident' in accident_class_names  # Adjust this condition based on your accident detection logic
+    return accident_detected, accident_class_names
+
+def save_frames(frames, timestamp, classes_present):
+    folder_name = timestamp.strftime("%Y-%m-%d %H-%M-%S")
+    folder_path = os.path.join("accidents", folder_name)
+    os.makedirs(folder_path, exist_ok=True)
+    
+    for i, (frame, frame_time, frame_classes) in enumerate(frames):
+        frame_name = f"accident-{frame_time.strftime('%Y-%m-%d %H-%M-%S')}.png"
+        cv2.imwrite(os.path.join(folder_path, frame_name), frame)
+    
+    accidents.append({
+        "timeline": folder_name,
+        "details": classes_present
+    })
 
 def create_accidents_tab(app):
     top_row = ctk.CTkFrame(app.tab2)  # Set a specific height for the top row
@@ -108,35 +136,31 @@ def create_accidents_tab(app):
     status_label_tab1.pack(pady=5)
     
     # list of last 10 accidents
-    app.last_accidents_tab1 = ctk.CTkScrollableFrame(status_frame_tab1, width=600,height=700, fg_color="transparent")
+    app.last_accidents_tab1 = ctk.CTkScrollableFrame(status_frame_tab1, width=600, height=700, fg_color="transparent")
     app.last_accidents_tab1.pack(pady=5)
     app.accident_button = ctk.CTkButton(status_frame_tab1, text="View All Accidents")
     app.accident_button.pack(pady=5)
 
-    # Display the most recent accident in a big tab
-    if app.accidents:
-        most_recent_accident = app.accidents[-1]
-        recent_frame = ctk.CTkFrame(app.last_accidents_tab1)
-        recent_frame.pack(fill="x", padx=5, pady=5)
+    update_accident_list(app)
 
-        try:
-            image_path = f"accidents/accident-{most_recent_accident['timestamp'].replace(':', '-')}.png"
-            recent_accident_image = ctk.CTkImage(Image.open(image_path), size=(600, 400))
-            recent_accident_image_label = ctk.CTkLabel(recent_frame, image=recent_accident_image, text="", width=600, height=400)
-            recent_accident_image_label.pack(side="top", padx=8, pady=5)
-        except FileNotFoundError:
-            recent_accident_image_label = ctk.CTkLabel(recent_frame, text="No Image", width=600, height=400)
-            recent_accident_image_label.pack(side="top", padx=8, pady=5)
+def update_accident_list(app):
+    """Update the list of accidents in the sidebar."""
+    for widget in app.last_accidents_tab1.winfo_children():
+        widget.destroy()
 
-        recent_details_label = ctk.CTkLabel(recent_frame, text=f"Timestamp: {most_recent_accident['timestamp']}\nDetails: {most_recent_accident['details']}")
-        recent_details_label.pack(side="top", padx=5, pady=5)
+    today = time.strftime("%Y-%m-%d")
+    accident_folders = [f for f in os.listdir("accidents") if today in f]
 
-    for i in range(len(app.accidents)-2,-1,-1):
+    for folder in accident_folders:
         frame = ctk.CTkFrame(app.last_accidents_tab1)
         frame.pack(fill="x", padx=5, pady=5)
 
+        timestamp = folder.replace("accident-", "")
+        image_path = f"accidents/{folder}/accident-{timestamp}.png"
+        details_path = f"accidents/{folder}/details.txt"
+        classes_path = f"accidents/{folder}/classes.txt"
+
         try:
-            image_path = f"accidents/accident-{app.accidents[i]['timestamp'].replace(':', '-')}.png"
             accident_image = ctk.CTkImage(Image.open(image_path), size=(50, 50))
             accident_image_label = ctk.CTkLabel(frame, image=accident_image, text="", width=50, height=50)
             accident_image_label.pack(side="left", padx=8, pady=5)
@@ -144,19 +168,43 @@ def create_accidents_tab(app):
             accident_image_label = ctk.CTkLabel(frame, text="No Image", width=50, height=50)
             accident_image_label.pack(side="left", padx=8, pady=5)
 
+        try:
+            with open(details_path, "r") as f:
+                details = f.read().strip()
+            button_color = "green"
+        except FileNotFoundError:
+            details = "No details available"
+            button_color = "red"
+
         button = ctk.CTkButton(
-        frame,
-        text=app.accidents[i]["timestamp"],
-        compound="left",  # Display image to the left of the text
-        command=lambda acc=app.accidents[i]: show_accident_details(accident=acc),
-        anchor="center",
-        height=50
+            frame,
+            text=timestamp,
+            compound="left",
+            command=lambda acc=folder: show_accident_details(accident=acc),
+            anchor="center",
+            height=50,
+            fg_color=button_color
         )
         button.pack(side="left", padx=5, pady=5, fill="x", expand=True)
 
+        try:
+            with open(classes_path, "r") as f:
+                classes = f.readlines()
+            for cls in classes:
+                cls_button = ctk.CTkButton(frame, text=f"Collision of: {cls.strip()}", height=30)
+                cls_button.pack(side="left", padx=5, pady=5)
+        except FileNotFoundError:
+            pass
+
 def show_accident_details(accident):
     """Show a pop-up with accident details."""
-    messagebox.showinfo("Accident Details", f"Timestamp: {accident['timestamp']}\nDetails: {accident['details']}")
+    details_path = f"accidents/{accident}/details.txt"
+    try:
+        with open(details_path, "r") as f:
+            details = f.read().strip()
+    except FileNotFoundError:
+        details = "No details available"
+    messagebox.showinfo("Accident Details", f"Timestamp: {accident.replace('accident-', '')}\nDetails: {details}")
 
 def add_logo(app, parent):
     """Adds a logo to the top left corner of a tab."""
