@@ -20,7 +20,7 @@ def detect_accident_in_frame(frame):
     accident_detected = 'Accident' in accident_class_names  # Adjust this condition based on your accident detection logic
     return accident_detected, accident_class_names
 
-def save_frames(frames, timestamp, classes_present, confirmed=True):
+def save_frames(app, frames, timestamp, classes_present, confirmed=True):
     folder_name = timestamp.strftime("%Y-%m-%d %H-%M-%S")
     folder_path = os.path.join("accidents", folder_name)
     if not confirmed:
@@ -39,11 +39,11 @@ def save_frames(frames, timestamp, classes_present, confirmed=True):
 
 def confirm_accident(app, frames_buffer, timestamp, accident_classes):
     def on_confirm():
-        save_frames(frames_buffer, timestamp, accident_classes, confirmed=True)
+        save_frames(app, frames_buffer, timestamp, accident_classes, confirmed=True)
         popup.destroy()
 
     def on_reject():
-        save_frames(frames_buffer, timestamp, accident_classes, confirmed=False)
+        save_frames(app, frames_buffer, timestamp, accident_classes, confirmed=False)
         popup.destroy()
 
     popup = ctk.CTkToplevel(app)
@@ -223,6 +223,7 @@ def update_accident_list(app):
 def show_accident_details(accident, editable=False):
     """Show a pop-up with accident details."""
     details_path = f"accidents/{accident}/details.txt"
+    video_path = f"accidents/{accident}/accident_video.mp4"
     try:
         with open(details_path, "r") as f:
             details = f.read().strip()
@@ -303,33 +304,61 @@ def show_accident_details(accident, editable=False):
         details_lines = details.split('\n')
         for line in details_lines:
             if line.startswith("Vehicle Classes:"):
-                vehicle_classes_frame = ctk.CTkFrame(scrollable_frame)
+                vehicle_classes_frame = ctk.CTkFrame(scrollable_frame, fg_color="lightgray")
                 vehicle_classes_frame.pack(pady=5, fill="x")
                 vehicle_classes_label = ctk.CTkLabel(vehicle_classes_frame, text=line, font=("Arial", 14))
                 vehicle_classes_label.pack(pady=5)
             elif line.startswith("Reason:"):
-                reason_frame = ctk.CTkFrame(scrollable_frame)
+                reason_frame = ctk.CTkFrame(scrollable_frame, fg_color="lightgray")
                 reason_frame.pack(pady=5, fill="x")
                 reason_label = ctk.CTkLabel(reason_frame, text=line, font=("Arial", 14))
                 reason_label.pack(pady=5)
             elif line.startswith("Casualties:"):
-                casualties_frame = ctk.CTkFrame(scrollable_frame)
+                casualties_frame = ctk.CTkFrame(scrollable_frame, fg_color="lightgray")
                 casualties_frame.pack(pady=5, fill="x")
                 casualties_label = ctk.CTkLabel(casualties_frame, text=line, font=("Arial", 14))
                 casualties_label.pack(pady=5)
             elif line.startswith("Injured:"):
-                injured_frame = ctk.CTkFrame(scrollable_frame)
+                injured_frame = ctk.CTkFrame(scrollable_frame, fg_color="lightgray")
                 injured_frame.pack(pady=5, fill="x")
                 injured_label = ctk.CTkLabel(injured_frame, text=line, font=("Arial", 14))
                 injured_label.pack(pady=5)
             elif line.startswith("Type:"):
-                accident_type_frame = ctk.CTkFrame(scrollable_frame)
+                accident_type_frame = ctk.CTkFrame(scrollable_frame, fg_color="lightgray")
                 accident_type_frame.pack(pady=5, fill="x")
                 accident_type_label = ctk.CTkLabel(accident_type_frame, text=line, font=("Arial", 14))
                 accident_type_label.pack(pady=5)
 
         edit_button = ctk.CTkButton(scrollable_frame, text="Edit", command=lambda: show_accident_details(accident, editable=True))
         edit_button.pack(pady=10)
+
+    # Add video player frame at the bottom
+    video_frame = ctk.CTkFrame(scrollable_frame)
+    video_frame.pack(pady=10, fill="x")
+
+    if os.path.exists(video_path):
+        video_label = ctk.CTkLabel(video_frame, text="Accident Video:", font=("Arial", 14, "bold"))
+        video_label.pack(pady=5)
+        
+        video_player = ctk.CTkLabel(video_frame)
+        video_player.pack(pady=5)
+
+        def play_video():
+            cap = cv2.VideoCapture(video_path)
+            while cap.isOpened():
+                ret, frame = cap.read()
+                if not ret:
+                    break
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                img = Image.fromarray(frame)
+                img_tk = ImageTk.PhotoImage(image=img)
+                video_player.configure(image=img_tk)
+                video_player.image = img_tk
+                video_player.update()
+                time.sleep(0.03)
+            cap.release()
+
+        threading.Thread(target=play_video, daemon=True).start()
 
 def add_logo(app, parent):
     """Adds a logo to the top left corner of a tab."""
