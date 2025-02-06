@@ -54,7 +54,7 @@ def create_accidents_tab(app):
 
     # Detect available cameras and populate the combo box with indexes
     """CAMERA INDEX HERE"""
-    available_cameras = {"Camera 1": 0}
+    available_cameras = {"Camera 1": 1}
     app.selected_camera_index_tab1 = available_cameras["Camera 1"]
 
     # Button container with left alignment but keeping buttons smaller
