@@ -6,3 +6,6 @@ pt_files/
 training_results/
 .venv/
 accidents/
+modules/__pycache__/
+__pycache__/
+

@@ -7,4 +7,5 @@ class AccidentDetection:
     def detect_accident(self, frame):
         accident_results = self.model(frame)
         accident_class_names = [self.model.names[int(box.cls)] for result in accident_results for box in result.boxes]
-        return accident_results, accident_class_names
+        accident_probabilities = [box.conf for result in accident_results for box in result.boxes]
+        return accident_results, accident_class_names, accident_probabilities
