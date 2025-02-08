@@ -106,8 +106,13 @@ class AccidentEyeApp(ctk.CTk):
 
     def update_weather_info(self):
         g = geocoder.ip('me')
-        location = f"{g.latlng[0]},{g.latlng[1]}"
-        url = f"https://api.open-meteo.com/v1/forecast?latitude={g.latlng[0]}&longitude={g.latlng[1]}&current_weather=true"
+        if g.latlng:
+            location = f"{g.latlng[0]},{g.latlng[1]}"
+            url = f"https://api.open-meteo.com/v1/forecast?latitude={g.latlng[0]}&longitude={g.latlng[1]}&current_weather=true"
+        else:
+            # Handle the case where g.latlng is None
+            location = "0,0"  # Default location or handle appropriately
+            url = f"https://api.open-meteo.com/v1/forecast?latitude=0&longitude=0&current_weather=true"
 
         weather_codes = {
             0: "Clear",
