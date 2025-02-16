@@ -18,8 +18,8 @@ accidents = []
 accident_detector = AccidentDetection()
 
 # Twilio configuration for sending SMS and making calls
-TWILIO_ACCOUNT_SID = 'ACee0adc0c7b1db4366aefc9a30dc24092'
-TWILIO_AUTH_TOKEN = '79890bf0810f43298073e50734f5d1d3'
+# TWILIO_ACCOUNT_SID = 'ACee0adc0c7b1db4366aefc9a30dc24092'
+# TWILIO_AUTH_TOKEN = '79890bf0810f43298073e50734f5d1d3'
 TWILIO_PHONE_NUMBER = '+18318880932'
 EMERGENCY_CONTACT_NUMBER = '+918750880297'
 
