@@ -13,6 +13,7 @@ import requests
 import geocoder
 
 ctk.set_appearance_mode("light")
+ctk.set_default_color_theme("dark-blue")
 class AccidentEyeApp(ctk.CTk):
     def __init__(self):
         super().__init__()
@@ -38,7 +39,7 @@ class AccidentEyeApp(ctk.CTk):
         self.tab1 = self.tabview.add("Dashboard")
         self.tab2 = self.tabview.add("Accidents")
         self.tab3 = self.tabview.add("Helmet Detection")
-        self.tab4 = self.tabview.add("Speed Detection")
+        # self.tab4 = self.tabview.add("Speed Detection")
         self.tab5 = self.tabview.add("Number Plate Detection")
         self.cameras = [0, 1, 2, 3]  # Update with actual camera indexes
         self.frames = [None] * 4

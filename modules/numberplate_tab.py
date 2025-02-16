@@ -5,6 +5,7 @@ import threading
 import time
 from datetime import datetime
 import os
+from tkinter import filedialog  # Add this import for file dialog
 from modules.numberplate_detection import NumberplateDetection
 import easyocr  # Add this import for EasyOCR
 
@@ -70,6 +71,14 @@ def create_numberplate_tab(app):
         side="left", padx=5, pady=10, expand=True, fill="x"
     )  # Expand inferencing button to take remaining space
 
+    # Add button to upload video file
+    upload_button = ctk.CTkButton(
+        button_container,
+        text="Upload Video",
+        command=lambda: upload_video(app)
+    )
+    upload_button.pack(side="left", padx=5, pady=10, expand=True, fill="x")
+
     # Timer on the right side
     timer_frame_tab2 = ctk.CTkFrame(top_row)
     timer_frame_tab2.pack(
@@ -126,6 +135,40 @@ def create_numberplate_tab(app):
     app.numberplate_button.pack(pady=5)
 
     update_numberplate_list(app)
+
+def upload_video(app):
+    """Upload a video file and run the model on it."""
+    video_path = filedialog.askopenfilename(filetypes=[("Video files", "*.mp4;*.avi")])
+    if video_path:
+        threading.Thread(target=lambda: process_video(app, video_path), daemon=True).start()
+
+def process_video(app, video_path):
+    """Process the uploaded video file."""
+    while True:  # Loop the video
+        cap = cv2.VideoCapture(video_path)
+        while cap.isOpened():
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            numberplate_results = detect_numberplate_in_frame(app, frame)
+            frame, classes = process_frame_with_yolo(app, frame)
+
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            img = Image.fromarray(frame)
+            img_tk = ctk.CTkImage(light_image=img, size=(700, 500))
+            app.cam_label2.configure(image=img_tk)
+            app.cam_label2.image = img_tk
+
+            # Resize the image to fit the dashboard frame
+            img_dashboard = img.resize((560, 360), Image.LANCZOS)
+            img_tk_dashboard = ctk.CTkImage(light_image=img_dashboard, size=(540, 320))
+            app.camera_labels[2].configure(image=img_tk_dashboard)
+            app.camera_labels[2].image = img_tk_dashboard
+
+            time.sleep(0.03)  # Control the frame rate
+
+        cap.release()
 
 def update_numberplate_statistics(app, last_numberplate=""):
     """Update the numberplate statistics."""
@@ -317,8 +360,8 @@ def update_camera_feed_tab2(app):
             # Resize the image to fit the dashboard frame
             img_dashboard = img.resize((560, 360), Image.LANCZOS)
             img_tk_dashboard = ctk.CTkImage(light_image=img_dashboard, size=(540, 320))
-            app.camera_labels[1].configure(image=img_tk_dashboard)
-            app.camera_labels[1].image = img_tk_dashboard
+            app.camera_labels[2].configure(image=img_tk_dashboard)
+            app.camera_labels[2].image = img_tk_dashboard
 
         time.sleep(0.03)  # Control the frame rate
 

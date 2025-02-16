@@ -8,6 +8,7 @@ import time
 from datetime import datetime
 from modules.accident_detection import AccidentDetection
 from twilio.rest import Client  # Add this import for sending SMS and making calls
+from tkinter import filedialog  # Add this import for file dialog
 
 # Initialize accident detection variables
 consecutive_frames_with_accident = 0
@@ -151,7 +152,7 @@ def create_accidents_tab(app):
     )  # Ensure it spans horizontally
 
     # Detect available cameras and populate the combo box with indexes
-    available_cameras = {"Camera 1": 0}
+    available_cameras = {"Camera 1": 1}
     app.selected_camera_index_tab1 = available_cameras["Camera 1"]
 
     # Button container with left alignment but keeping buttons smaller
@@ -186,6 +187,14 @@ def create_accidents_tab(app):
     inferencing_button_tab1.pack(
         side="left", padx=5, pady=10, expand=True, fill="x"
     )  # Expand inferencing button to take remaining space
+
+    # Add button to upload video file
+    upload_button = ctk.CTkButton(
+        button_container,
+        text="Upload Video",
+        command=lambda: upload_video(app)
+    )
+    upload_button.pack(side="left", padx=5, pady=10, expand=True, fill="x")
 
     # Timer on the right side
     timer_frame_tab1 = ctk.CTkFrame(top_row)
@@ -243,6 +252,60 @@ def create_accidents_tab(app):
     app.accident_button.pack(pady=5)
 
     update_accident_list(app)
+
+def upload_video(app):
+    """Upload a video file and run the model on it."""
+    video_path = filedialog.askopenfilename(filetypes=[("Video files", "*.mp4;*.avi")])
+    if video_path:
+        threading.Thread(target=lambda: process_video(app, video_path), daemon=True).start()
+
+def process_video(app, video_path):
+    """Process the uploaded video file."""
+    while True:  # Loop the video
+        cap = cv2.VideoCapture(video_path)
+        while cap.isOpened():
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            accident_detected, classes_present, probabilities = detect_accident_in_frame(frame)
+            probabilities = [float(prob) for prob in probabilities]  # Convert probabilities to float
+
+            if accident_detected and max(probabilities) > 0.5:
+                app.consecutive_frames_with_accident += 1
+                app.consecutive_frames_without_accident = 0
+                accident_results, accident_classes, accident_probabilities = app.accident_detector.detect_accident(frame)
+                app.frames_buffer.append((frame, datetime.now(), accident_classes))
+
+                if app.consecutive_frames_with_accident >= 80:
+                    # Store frames if accident detected for 80 out of 100 frames
+                    confirm_accident(app, app.frames_buffer, datetime.now(), accident_classes)
+                    app.frames_buffer = []
+                    app.consecutive_frames_with_accident = 0
+            else:
+                app.consecutive_frames_without_accident += 1
+                if app.consecutive_frames_without_accident >= 30:
+                    # Reset buffer if accident is out of frame for 30 consecutive frames
+                    app.frames_buffer = []
+                    app.consecutive_frames_with_accident = 0
+
+            frame, classes = process_frame_with_yolo(app, frame)
+
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            img = Image.fromarray(frame)
+            img_tk = ctk.CTkImage(light_image=img, size=(700, 500))
+            app.cam_label1.configure(image=img_tk)
+            app.cam_label1.image = img_tk
+
+            # Resize the image to fit the dashboard frame
+            img_dashboard = img.resize((560, 360), Image.LANCZOS)
+            img_tk_dashboard = ctk.CTkImage(light_image=img_dashboard, size=(540, 320))
+            app.camera_labels[0].configure(image=img_tk_dashboard)
+            app.camera_labels[0].image = img_tk_dashboard
+
+            time.sleep(0.03)  # Control the frame rate
+
+        cap.release()
 
 def update_accident_statistics(app):
     accidents_today, last_accident = read_accident_log()
@@ -531,7 +594,7 @@ def update_camera_feed(app):
             accident_results, accident_classes, accident_probabilities = app.accident_detector.detect_accident(frame)
             app.frames_buffer.append((frame, datetime.now(), accident_classes))
 
-            if app.consecutive_frames_with_accident >= 80:
+            if app.consecutive_frames_with_accident >= 40:
                 # Store frames if accident detected for 80 out of 100 frames
                 confirm_accident(app, app.frames_buffer, datetime.now(), accident_classes)
                 app.frames_buffer = []
@@ -559,7 +622,6 @@ def update_camera_feed(app):
             app.camera_labels[0].configure(image=img_tk_dashboard)
             app.camera_labels[0].image = img_tk_dashboard
 
-
         time.sleep(0.03)  # Control the frame rate
 
 def process_frame_with_yolo(app, frame):
@@ -572,8 +634,9 @@ def process_frame_with_yolo(app, frame):
             x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
             class_name = class_names.pop(0)
             probability = probabilities.pop(0)
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            cv2.putText(frame, f"{class_name} ({probability:.2f})", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+            color = (0, 255, 0) if probability < 0.7 else (0, 0, 255)  # Green if probability < 70%, else Red
+            cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+            cv2.putText(frame, f"{class_name} ({probability:.2f})", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
     return frame, classes
 
 def start_timer(app):
@@ -620,3 +683,57 @@ def backend_detection_loop(app):
     while app.backend_detection_running:
         # Implement backend detection logic here
         time.sleep(1)  # Adjust the sleep time as needed
+
+# ...existing code...
+
+def update_camera_feed(app):
+    """Update the camera feed in the GUI."""
+    while app.camera_running_tab1:
+        ret, frame = app.cap_tab1.read()
+        if not ret:
+            break
+
+        if not app.backend_detection_running:
+            time.sleep(0.03)  # Control the frame rate
+            continue
+
+        accident_detected, classes_present, probabilities = detect_accident_in_frame(frame)
+        probabilities = [float(prob) for prob in probabilities]  # Convert probabilities to float
+
+        if accident_detected and max(probabilities) > 0.2:
+            app.consecutive_frames_with_accident += 1
+            app.consecutive_frames_without_accident = 0
+            accident_results, accident_classes, accident_probabilities = app.accident_detector.detect_accident(frame)
+            app.frames_buffer.append((frame, datetime.now(), accident_classes))
+
+            if app.consecutive_frames_with_accident >= 40:
+                # Store frames if accident detected for 80 out of 100 frames
+                confirm_accident(app, app.frames_buffer, datetime.now(), accident_classes)
+                app.frames_buffer = []
+                app.consecutive_frames_with_accident = 0
+        else:
+            app.consecutive_frames_without_accident += 1
+            if app.consecutive_frames_without_accident >= 30:
+                # Reset buffer if accident is out of frame for 30 consecutive frames
+                app.frames_buffer = []
+                app.consecutive_frames_with_accident = 0
+
+        if app.inferencing_tab1:
+            frame, classes = process_frame_with_yolo(app, frame)
+
+        if ret:
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            img = Image.fromarray(frame)
+            img_tk = ctk.CTkImage(light_image=img, size=(700, 500))
+            app.cam_label1.configure(image=img_tk)
+            app.cam_label1.image = img_tk
+
+            # Resize the image to fit the dashboard frame
+            img_dashboard = img.resize((560, 360), Image.LANCZOS)
+            img_tk_dashboard = ctk.CTkImage(light_image=img_dashboard, size=(540, 320))
+            app.camera_labels[0].configure(image=img_tk_dashboard)
+            app.camera_labels[0].image = img_tk_dashboard
+
+        time.sleep(0.03)  # Control the frame rate
+
+# ...existing code...
