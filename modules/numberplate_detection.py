@@ -5,5 +5,6 @@ class NumberplateDetection:
         self.model = YOLO(model_path)
 
     def detect_numberplate(self, frame):
-        numberplate_results = self.model(frame)
-        return numberplate_results
+        results = self.model(frame)
+        class_names = [result.names[0] for result in results]  # Extract the first name from each result
+        return results, class_names
