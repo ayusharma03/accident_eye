@@ -33,14 +33,8 @@ def create_helmet_tab(app):
     )  # Ensure it spans horizontally
 
     # Detect available cameras and populate the combo box with indexes
-<<<<<<< HEAD
-    """CAMERA INDEX HERE"""
-    available_cameras = {"Camera 1": 1}
-    app.selected_camera_index_tab2 = available_cameras["Camera 1"]
-=======
     available_cameras = {"Camera 1": 1}
     app.selected_camera_index_tab3 = available_cameras["Camera 1"]
->>>>>>> 2189b8e6d7ca1b1bfa3ec1e6f7c4647de71e0e38
 
     # Button container with left alignment but keeping buttons smaller
     button_container = ctk.CTkFrame(button_frame)
