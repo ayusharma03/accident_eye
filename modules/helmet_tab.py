@@ -7,6 +7,7 @@ from datetime import datetime
 import os
 from tkinter import filedialog  # Add this import for file dialog
 from modules.helmet_detection import HelmetDetection
+import tkinter.messagebox as messagebox
 
 def detect_helmet_in_frame(app, frame):
     helmet_results = app.helmet_detector.detect_helmet(frame)

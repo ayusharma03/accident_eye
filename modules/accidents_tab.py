@@ -98,7 +98,7 @@ def confirm_accident(app, frames_buffer, timestamp, accident_classes):
         save_frames(app, frames_buffer, timestamp, accident_classes, confirmed=True)
         stop_inferencing(app, 1)  # Stop inferencing when an accident is confirmed
         stop_backend_detection(app)  # Stop backend accident detection
-        contact_emergency_services(timestamp, "Coimbatore")  # Contact emergency services
+        contact_emergency_services(timestamp, "RKGIT, Ghaziabad")  # Contact emergency services
         popup.destroy()
         confirm_clearance(app)  # Confirm clearance before starting next inference
 
